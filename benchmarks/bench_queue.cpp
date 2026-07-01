@@ -14,55 +14,55 @@
 #include <thread>
 
 // ── Lock-free SPSC ────────────────────────────────────────────────────────────
+//
+// NOTE: producer must be created INSIDE the iteration loop.
+// If created outside, it pushes items only once — subsequent iterations
+// spin forever waiting for items that will never come (deadlock).
 static void BM_SPSCQueue(benchmark::State& state) {
     constexpr std::size_t kCap = 4096;
-    SPSCQueue<int, kCap> q;
-    std::atomic<bool> done{false};
-    long long items = state.range(0);
-
-    std::thread producer([&] {
-        for (long long i = 0; i < items; ++i)
-            while (!q.push(static_cast<int>(i))) std::this_thread::yield();
-        done.store(true, std::memory_order_release);
-    });
+    const long long items = state.range(0);
 
     for (auto _ : state) {
+        SPSCQueue<int, kCap> q;
         int received = 0;
-        long long count = 0;
-        while (count < items) {
+
+        std::jthread producer([&](std::stop_token) {
+            for (long long i = 0; i < items; ++i)
+                while (!q.push(static_cast<int>(i))) std::this_thread::yield();
+        });
+
+        for (long long count = 0; count < items;) {
             if (q.pop(received)) ++count;
             else std::this_thread::yield();
         }
         benchmark::DoNotOptimize(received);
+        // producer joins here on scope exit (jthread RAII)
     }
-    producer.join();
     state.SetItemsProcessed(state.iterations() * items);
 }
 BENCHMARK(BM_SPSCQueue)->Arg(100'000)->UseRealTime();
 
 // ── Mutex-guarded std::queue ──────────────────────────────────────────────────
 static void BM_MutexQueue(benchmark::State& state) {
-    std::queue<int> q;
-    std::mutex      mtx;
-    std::atomic<bool> done{false};
-    long long items = state.range(0);
-
-    std::thread producer([&] {
-        for (long long i = 0; i < items; ++i) {
-            std::lock_guard lock{mtx};
-            q.push(static_cast<int>(i));
-        }
-        done.store(true, std::memory_order_release);
-    });
+    const long long items = state.range(0);
 
     for (auto _ : state) {
-        long long count = 0;
-        while (count < items) {
+        std::queue<int> q;
+        std::mutex      mtx;
+
+        std::jthread producer([&](std::stop_token) {
+            for (long long i = 0; i < items; ++i) {
+                std::lock_guard lock{mtx};
+                q.push(static_cast<int>(i));
+            }
+        });
+
+        for (long long count = 0; count < items;) {
             std::lock_guard lock{mtx};
-            if (!q.empty()) { q.front(); q.pop(); ++count; }
+            if (!q.empty()) { benchmark::DoNotOptimize(q.front()); q.pop(); ++count; }
         }
+        // producer joins on scope exit
     }
-    producer.join();
     state.SetItemsProcessed(state.iterations() * items);
 }
 BENCHMARK(BM_MutexQueue)->Arg(100'000)->UseRealTime();

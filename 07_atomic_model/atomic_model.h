@@ -108,7 +108,10 @@ public:
             std::lock_guard lock{s_mutex};
             ptr = s_instance.load(std::memory_order_relaxed);
             if (ptr == nullptr) {
-                ptr = new T(std::forward<Args>(args)...);
+                // Raw new is intentional: singleton lives for the program lifetime.
+                // std::unique_ptr<T> cannot be stored in std::atomic<T*>;
+                // instead we rely on OS reclaim at process exit.
+                ptr = new T(std::forward<Args>(args)...);  // NOLINT(cppcoreguidelines-owning-memory)
                 s_instance.store(ptr, std::memory_order_release);
             }
         }

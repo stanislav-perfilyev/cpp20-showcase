@@ -9,6 +9,8 @@
 //  • alignas(64) on head/tail  →  prevents false sharing (cache-line isolation)
 //  • memory_order_release on store, acquire on load  →  correct happens-before,
 //    cheaper than seq_cst (no full fence on x86, saves ~1 cycle)
+//  • "Waste one slot" full detection  →  head−tail == Capacity−1 means full;
+//    max usable capacity is Capacity−1 items
 //  • [[nodiscard]] on push/pop  →  caller must handle "queue full/empty"
 //  • noexcept on hot path  →  no exception overhead in tight loops
 //
@@ -22,7 +24,6 @@
 #include <bit>
 #include <cstddef>
 #include <optional>
-#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -67,11 +68,15 @@ public:
         return true;
     }
 
-    /// Dequeue and return wrapped in std::optional (convenience).
+    /// Dequeue and return wrapped in std::optional.
+    /// Does NOT require T to be default-constructible — accesses buffer directly.
     [[nodiscard]] std::optional<T> pop() noexcept {
-        T value{};
-        if (!pop(value)) return std::nullopt;
-        return std::optional<T>{std::move(value)};
+        const std::size_t tail = m_tail.load(std::memory_order_relaxed);
+        if (tail == m_head.load(std::memory_order_acquire))
+            return std::nullopt;
+        auto result = std::make_optional<T>(std::move(m_buffer[tail & kMask]));
+        m_tail.store(tail + 1, std::memory_order_release);
+        return result;
     }
 
     // ── Introspection (any thread, approximate) ───────────────────────────────
@@ -84,7 +89,7 @@ public:
     }
 
     [[nodiscard]] bool empty_approx() const noexcept { return size_approx() == 0; }
-    [[nodiscard]] bool full_approx()  const noexcept { return size_approx() == Capacity; }
+    [[nodiscard]] bool full_approx()  const noexcept { return size_approx() == Capacity - 1; }
 
     static constexpr std::size_t capacity() noexcept { return Capacity; }
 
@@ -92,22 +97,14 @@ private:
     template<typename U>
     [[nodiscard]] bool push_impl(U&& item) noexcept {
         const std::size_t head = m_head.load(std::memory_order_relaxed);
-        const std::size_t next = head + 1;
-
-        // Acquire: see all consumer's tail updates.
-        if ((next & kMask) == (m_tail.load(std::memory_order_acquire) & kMask)
-            && next != m_tail.load(std::memory_order_relaxed))
-            return false;  // full
-
-        // Simpler full check (works because Capacity is power-of-2):
-        // full when (head+1 - tail) == Capacity
+        // Acquire: see consumer's tail update (know which slots are free).
+        // Full when head − tail == Capacity−1 ("waste one slot" approach:
+        // keeps empty/full distinction without a separate size counter).
         if (head - m_tail.load(std::memory_order_acquire) == Capacity - 1)
             return false;
-
         m_buffer[head & kMask] = std::forward<U>(item);
-
         // Release: consumer can now see the new item.
-        m_head.store(next, std::memory_order_release);
+        m_head.store(head + 1, std::memory_order_release);
         return true;
     }
 

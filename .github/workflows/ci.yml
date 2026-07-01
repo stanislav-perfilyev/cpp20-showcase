@@ -31,8 +31,6 @@ jobs:
           # MSVC on Windows (latest)
           - os: windows-latest
             compiler: msvc
-            cxx: cl
-            cc:  cl
             std: 23
 
     steps:
@@ -49,7 +47,15 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install ninja --no-progress
 
-      - name: Configure
+      # MSVC requires the VS Developer Environment to be active
+      # so that cl.exe and MSBuild are in PATH. Without this step,
+      # cmake cannot find the compiler and configure fails.
+      - name: Setup MSVC Developer Environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure (Linux)
+        if: runner.os == 'Linux'
         env:
           CC:  ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
@@ -57,7 +63,14 @@ jobs:
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=${{ matrix.std }}
-        shell: bash
+
+      - name: Configure (Windows / MSVC)
+        if: runner.os == 'Windows'
+        run: |
+          cmake -B build -G "Ninja" `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_CXX_STANDARD=${{ matrix.std }}
+        shell: pwsh
 
       - name: Build
         run: cmake --build build --parallel
