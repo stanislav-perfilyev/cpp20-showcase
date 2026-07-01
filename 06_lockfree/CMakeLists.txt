@@ -1,0 +1,6 @@
+add_executable(test_lockfree test_lockfree.cpp)
+target_compile_features(test_lockfree PRIVATE cxx_std_23)
+target_link_libraries(test_lockfree PRIVATE GTest::gtest GTest::gtest_main)
+find_package(Threads REQUIRED)
+target_link_libraries(test_lockfree PRIVATE Threads::Threads)
+gtest_discover_tests(test_lockfree)

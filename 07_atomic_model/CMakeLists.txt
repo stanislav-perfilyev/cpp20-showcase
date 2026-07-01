@@ -1,0 +1,6 @@
+add_executable(test_atomic_model test_atomic_model.cpp)
+target_compile_features(test_atomic_model PRIVATE cxx_std_23)
+target_link_libraries(test_atomic_model PRIVATE GTest::gtest GTest::gtest_main)
+find_package(Threads REQUIRED)
+target_link_libraries(test_atomic_model PRIVATE Threads::Threads)
+gtest_discover_tests(test_atomic_model)
