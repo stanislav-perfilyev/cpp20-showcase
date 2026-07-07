@@ -11,7 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ── Compiler warnings (senior standard) ───────────────────────
 add_compile_options(
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic -Wshadow -Wno-unused-function>
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic -Wshadow -Wno-unused-function -Werror>
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /utf-8 /permissive->
 )
 
@@ -55,4 +55,4 @@ add_subdirectory(06_lockfree)
 add_subdirectory(07_atomic_model)
 add_subdirectory(08_format)
 add_subdirectory(09_mdspan)
-add_subdirectory(benchmarks)
+add_subdirectory(benc
