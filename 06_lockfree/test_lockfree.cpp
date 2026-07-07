@@ -7,6 +7,7 @@
 #include <atomic>
 #include <numeric>
 #include <string>
+#include <chrono>
 #include <thread>
 #include <vector>
 
@@ -118,6 +119,109 @@ TEST(SPSCQueue, SizeApprox_SingleThread) {
     EXPECT_EQ(q.size_approx(), 2u);
     int v; q.pop(v);
     EXPECT_EQ(q.size_approx(), 1u);
+}
+
+
+// ── Multi-threaded throughput & latency ───────────────────────────────────────
+
+TEST(SPSCQueue, MT_Throughput_Measurement) {
+    // Measures real concurrent throughput: producer + consumer in separate jthreads
+    constexpr int N = 2'000'000;
+    SPSCQueue<int, 65536> q;
+    std::atomic<bool> ready{false};
+
+    auto t0 = std::chrono::steady_clock::now();
+
+    std::jthread producer([&](std::stop_token) {
+        ready.wait(false, std::memory_order_acquire);
+        for (int i = 0; i < N; ++i)
+            while (!q.push(i)) std::this_thread::yield();
+    });
+
+    std::jthread consumer([&](std::stop_token) {
+        ready.wait(false, std::memory_order_acquire);
+        int v = 0, received = 0;
+        while (received < N) {
+            if (q.pop(v)) ++received;
+            else std::this_thread::yield();
+        }
+    });
+
+    ready.store(true, std::memory_order_release);
+    ready.notify_all();
+
+    producer.join();
+    consumer.join();
+
+    const double elapsed_s = std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - t0).count();
+    const double mops = N / elapsed_s / 1e6;
+    std::printf("[SPSCQueue Throughput] %.2f M ops/sec (N=%d, %.3f s)\n",
+                mops, N, elapsed_s);
+
+    EXPECT_GT(mops, 0.1); // >100k ops/sec — conservative for any CI machine
+}
+
+TEST(SPSCQueue, MT_FIFO_Ordering_Verified) {
+    // Verifies strict FIFO ordering under concurrent push/pop
+    constexpr int N = 100'000;
+    SPSCQueue<int, 4096> q;
+    std::vector<int> received;
+    received.reserve(N);
+
+    std::jthread producer([&](std::stop_token) {
+        for (int i = 0; i < N; ++i)
+            while (!q.push(i)) std::this_thread::yield();
+    });
+
+    std::jthread consumer([&](std::stop_token) {
+        int v = 0;
+        while (static_cast<int>(received.size()) < N) {
+            if (q.pop(v)) received.push_back(v);
+            else std::this_thread::yield();
+        }
+    });
+
+    producer.join();
+    consumer.join();
+
+    ASSERT_EQ(static_cast<int>(received.size()), N);
+    for (int i = 0; i < N; ++i)
+        EXPECT_EQ(received[i], i) << "FIFO violated at index " << i;
+}
+
+TEST(SPSCQueue, MT_Latency_Mean_Under100us) {
+    // Measures mean round-trip time: push timestamp → pop timestamp
+    constexpr int N = 10'000;
+    SPSCQueue<int64_t, 256> q; // pass timestamps
+    std::atomic<uint64_t>   total_ns{0};
+
+    std::jthread producer([&](std::stop_token) {
+        for (int i = 0; i < N; ++i) {
+            const int64_t ts = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count();
+            while (!q.push(ts)) std::this_thread::yield();
+            std::this_thread::yield(); // simulate inter-arrival gap
+        }
+    });
+
+    std::jthread consumer([&](std::stop_token) {
+        int64_t ts = 0;
+        for (int received = 0; received < N; ) {
+            if (!q.pop(ts)) { std::this_thread::yield(); continue; }
+            const int64_t now = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count();
+            total_ns.fetch_add(static_cast<uint64_t>(now - ts), std::memory_order_relaxed);
+            ++received;
+        }
+    });
+
+    producer.join();
+    consumer.join();
+
+    const double mean_us = static_cast<double>(total_ns.load()) / N / 1000.0;
+    std::printf("[SPSCQueue Latency] Mean push→pop: %.2f µs\n", mean_us);
+    EXPECT_LT(mean_us, 100.0); // <100µs mean on any reasonable machine
 }
 
 int main(int argc, char** argv) {
