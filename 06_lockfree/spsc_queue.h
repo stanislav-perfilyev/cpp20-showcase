@@ -91,7 +91,7 @@ public:
     [[nodiscard]] bool empty_approx() const noexcept { return size_approx() == 0; }
     [[nodiscard]] bool full_approx()  const noexcept { return size_approx() == Capacity - 1; }
 
-    static constexpr std::size_t capacity() noexcept { return Capacity; }
+    [[nodiscard]] static constexpr std::size_t capacity() noexcept { return Capacity; }
 
 private:
     template<typename U>

@@ -55,4 +55,4 @@ add_subdirectory(06_lockfree)
 add_subdirectory(07_atomic_model)
 add_subdirectory(08_format)
 add_subdirectory(09_mdspan)
-add_subdirectory(benc
+add_subdirectory(benchmarks)
