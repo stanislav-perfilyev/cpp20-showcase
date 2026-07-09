@@ -133,4 +133,5 @@ public:
     }
 
 private:
-    std::
+    std::vector<T> m_data;
+};

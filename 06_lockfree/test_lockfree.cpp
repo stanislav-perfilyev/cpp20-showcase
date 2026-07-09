@@ -226,4 +226,6 @@ TEST(SPSCQueue, MT_Latency_Mean_Under100us) {
 }
 
 int main(int argc, char** argv) {
-    ::testing::In
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}

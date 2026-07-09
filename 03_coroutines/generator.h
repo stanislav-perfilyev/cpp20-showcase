@@ -132,4 +132,6 @@ private:
 /// Throws std::invalid_argument immediately (not lazily) if step == 0.
 /// Note: irange itself is NOT a coroutine so the throw is visible to EXPECT_THROW.
 [[nodiscard]] inline Generator<long long> irange(long long start, long long stop, long long step = 1) {
-    if (step == 0) t
+    if (step == 0) throw std::invalid_argument("irange: step must not be zero");
+    return irange_impl(start, stop, step);
+}
