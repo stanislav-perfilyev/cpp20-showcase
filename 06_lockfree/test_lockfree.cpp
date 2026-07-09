@@ -32,7 +32,6 @@ TEST(SPSCQueue, Empty_PopReturnsFalse) {
 TEST(SPSCQueue, Full_PushReturnsFalse) {
     SPSCQueue<int, 4> q;
     // Capacity=4 → max 3 items (one slot reserved for full detection)
-    int v = 0;
     int pushed = 0;
     while (q.push(pushed)) ++pushed;
     EXPECT_GT(pushed, 0);

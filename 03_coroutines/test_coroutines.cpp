@@ -72,7 +72,8 @@ Task<int> async_chain(int x) {
 
 Task<int> async_throws() {
     throw std::runtime_error("async error");
-    co_return 0;
+    // cppcheck-suppress unreachableCode
+    co_return 0;  // required: coroutine must have co_return path
 }
 } // namespace
 
@@ -84,7 +85,10 @@ TEST(Task, ChainedTasks) {
     EXPECT_EQ(async_chain(10).sync_wait(), 25);
 }
 TEST(Task, ExceptionPropagates) {
-    EXPECT_THROW(async_throws().sync_wait(), std::runtime_error);
+    // [[nodiscard]] on sync_wait(): use maybe_unused to suppress -Wunused-result
+    EXPECT_THROW(
+        { [[maybe_unused]] auto r = async_throws().sync_wait(); },
+        std::runtime_error);
 }
 
 int main(int argc, char** argv) {
