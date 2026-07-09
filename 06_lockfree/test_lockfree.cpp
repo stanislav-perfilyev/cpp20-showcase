@@ -52,7 +52,7 @@ TEST(SPSCQueue, FIFO_Order) {
 TEST(SPSCQueue, Optional_Pop) {
     SPSCQueue<int, 4> q;
     EXPECT_FALSE(q.pop().has_value());
-    q.push(7);
+    ASSERT_TRUE(q.push(7));
     auto opt = q.pop();
     ASSERT_TRUE(opt.has_value());
     EXPECT_EQ(*opt, 7);
@@ -115,9 +115,9 @@ TEST(SPSCQueue, StressTest_1M_Items) {
 TEST(SPSCQueue, SizeApprox_SingleThread) {
     SPSCQueue<int, 8> q;
     EXPECT_EQ(q.size_approx(), 0u);
-    q.push(1); q.push(2);
+    ASSERT_TRUE(q.push(1)); ASSERT_TRUE(q.push(2));
     EXPECT_EQ(q.size_approx(), 2u);
-    int v; q.pop(v);
+    int v; ASSERT_TRUE(q.pop(v));
     EXPECT_EQ(q.size_approx(), 1u);
 }
 

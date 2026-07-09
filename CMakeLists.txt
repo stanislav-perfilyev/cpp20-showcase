@@ -3,7 +3,7 @@ project(cpp20_showcase VERSION 1.0.0 LANGUAGES CXX)
 
 # ── ccache (faster rebuilds) ──────────────────────────────────────────────────
 find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
+if(CCACHE_PROGRAM AND NOT MSVC)
     set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
     set(CMAKE_C_COMPILER_LAUNCHER   "${CCACHE_PROGRAM}")
 endif()
@@ -18,8 +18,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ── Compiler warnings (senior standard) ───────────────────────
 add_compile_options(
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic -Wshadow -Wno-unused-function -Werror>
-    $<$<CXX_COMPILER_ID:MSVC>:/W4 /utf-8 /permissive->
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall>
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wextra>
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wpedantic>
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wshadow>
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wno-unused-function>
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Werror>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+    $<$<CXX_COMPILER_ID:MSVC>:/permissive->
 )
 
 # ── FetchContent ───────────────────────────────────────────────

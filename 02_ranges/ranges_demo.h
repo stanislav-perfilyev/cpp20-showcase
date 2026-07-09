@@ -27,7 +27,7 @@ even_squares(std::span<const int> data, int n) {
         | std::views::filter([](int x) { return x % 2 == 0; })
         | std::views::transform([](int x) { return x * x; })
         | std::views::take(n);
-    return {view.begin(), view.end()};
+    return std::vector<int>(view.begin(), view.end());
 }
 
 /// Words longer than min_len, uppercased.
@@ -41,7 +41,7 @@ long_words_upper(std::span<const std::string> words, std::size_t min_len) {
     auto view = words
         | std::views::filter([min_len](const std::string& w) { return w.size() > min_len; })
         | std::views::transform(to_upper);
-    return {view.begin(), view.end()};
+    return std::vector<int>(view.begin(), view.end());
 }
 
 /// Sliding window sums over a range (width w).
