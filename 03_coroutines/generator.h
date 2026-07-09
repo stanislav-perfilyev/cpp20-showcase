@@ -135,3 +135,12 @@ private:
     if (step == 0) throw std::invalid_argument("irange: step must not be zero");
     return irange_impl(start, stop, step);
 }
+
+/// Generator from any input range — yields each element in order.
+/// Useful for adapting existing containers/ranges to Generator pipelines.
+template<std::ranges::input_range R>
+[[nodiscard]] inline Generator<std::ranges::range_value_t<R>>
+from_range(const R& rng) {
+    for (const auto& v : rng)
+        co_yield v;
+}
