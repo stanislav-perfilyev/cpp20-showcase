@@ -25,6 +25,7 @@
 // the store to `flag` (from producer's PoV), and the load of `flag` HAPPENS
 // BEFORE the load of `data` (from consumer's PoV).
 
+/// MessageChannel — acquire/release message passing between producer and consumer.
 struct MessageChannel {
     std::atomic<bool> flag{false};
     int data{0};  // protected by flag's release/acquire
@@ -48,6 +49,7 @@ struct MessageChannel {
 // When you only need atomicity (no ordering), relaxed is cheapest.
 // Use case: statistics counters, hit counts — no one cares about order.
 
+/// RelaxedCounter — relaxed atomic counter (statistics; no ordering required).
 struct RelaxedCounter {
     std::atomic<std::int64_t> value{0};
 
@@ -66,6 +68,7 @@ struct RelaxedCounter {
 // atomic_flag is the ONLY type guaranteed lock-free by the standard.
 // test_and_set = acquire; clear = release.
 
+/// Spinlock — atomic_flag-based spinlock; always lock-free per the C++ standard.
 class Spinlock {
 public:
     void lock() noexcept {
@@ -77,6 +80,7 @@ public:
     }
 
     // RAII guard
+    /// Guard — RAII lock guard; acquires on construction, releases on destruction.
     struct Guard {
         explicit Guard(Spinlock& sl) : m_sl(sl) { m_sl.lock(); }
         ~Guard() { m_sl.unlock(); }
@@ -98,6 +102,7 @@ private:
 // constructor with pointer store. Fix: atomic store/load with release/acquire.
 
 template<typename T>
+/// LazySingleton<T> — thread-safe lazy singleton via double-checked locking (acquire/release).
 class LazySingleton {
 public:
     template<typename... Args>
@@ -132,6 +137,7 @@ template<typename T> std::mutex        LazySingleton<T>::s_mutex;
 // More expensive (full fence on x86), but simplest reasoning model.
 // Dekker's critical section: shows seq_cst prevents both threads entering at once.
 
+/// SeqCstFlag — demonstrates sequential-consistency: all threads see a single global order.
 struct SeqCstFlag {
     std::atomic<bool> wants_enter{false};
 

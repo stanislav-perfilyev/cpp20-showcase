@@ -27,7 +27,7 @@
 
 ---
 
-## Quick Start
+## Build
 
 ```bash
 # Prerequisites: CMake 3.25+, GCC 13+ or Clang 17+, Ninja
@@ -38,7 +38,31 @@ ctest --preset debug
 
 ---
 
-## Highlights
+## Usage
+
+```cpp
+// 01_concepts — TypedStack with concept constraints
+TypedStack<int> st;
+st.push(3); st.push(1); st.push(4);
+std::cout << st.min() << " " << st.max() << "\n";  // 1 4
+
+// 03_coroutines — lazy infinite generator
+for (auto n : fibonacci() | std::views::take(10))
+    std::cout << n << ' ';  // 0 1 1 2 3 5 8 13 21 34
+
+// 06_lockfree — lock-free SPSC queue
+SPSCQueue<int, 4096> q;
+q.push(42);
+int v; q.pop(v);  // v == 42
+
+// 07_atomic_model — Spinlock RAII guard
+Spinlock sl;
+{ auto g = sl.lock_guard(); /* critical section */ }
+```
+
+---
+
+## Architecture
 
 ### Lock-free SPSC Queue (`06_lockfree/`)
 

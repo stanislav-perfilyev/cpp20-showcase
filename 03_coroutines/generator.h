@@ -18,9 +18,11 @@
 #include <utility>
 
 template<std::movable T>
+/// Generator<T> — C++20 co_yield generator; input-range compatible.
 class Generator {
 public:
     // ── Promise type (required by coroutine machinery) ────────────────────────
+    /// promise_type — coroutine promise: stores current value and exception.
     struct promise_type {
         std::optional<T>   current_value;
         std::exception_ptr exception;
@@ -40,6 +42,7 @@ public:
     };
 
     // ── Iterator (input iterator — single-pass) ────────────────────────────────
+    /// iterator — input iterator that resumes the coroutine on each increment.
     class iterator {
     public:
         using iterator_category = std::input_iterator_tag;

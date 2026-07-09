@@ -89,6 +89,7 @@ template<Container C>
 /// [[nodiscard]] on all accessors (senior standard).
 template<typename T>
     requires (Sortable<T> && Printable<T>)
+/// TypedStack — type-safe stack constrained to Sortable+Printable elements.
 class TypedStack {
 public:
     using value_type = T;

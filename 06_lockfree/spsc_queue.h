@@ -29,6 +29,7 @@
 
 template<typename T, std::size_t Capacity>
     requires (std::is_nothrow_move_constructible_v<T>)
+/// SPSCQueue<T,Capacity> — lock-free single-producer/single-consumer ring buffer.
 class SPSCQueue {
     static_assert(Capacity >= 2,          "Capacity must be at least 2");
     static_assert(std::has_single_bit(Capacity),

@@ -13,6 +13,9 @@
 #include <queue>
 #include <thread>
 
+// ── Benchmark constants ──────────────────────────────────────────────────────
+static constexpr long long kBenchItems = 100'000;  // items per benchmark iteration
+
 // ── Lock-free SPSC ────────────────────────────────────────────────────────────
 //
 // NOTE: producer must be created INSIDE the iteration loop.
@@ -40,7 +43,7 @@ static void BM_SPSCQueue(benchmark::State& state) {
     }
     state.SetItemsProcessed(state.iterations() * items);
 }
-BENCHMARK(BM_SPSCQueue)->Arg(100'000)->UseRealTime();
+BENCHMARK(BM_SPSCQueue)->Arg(kBenchItems)->UseRealTime();
 
 // ── Mutex-guarded std::queue ──────────────────────────────────────────────────
 static void BM_MutexQueue(benchmark::State& state) {
@@ -65,7 +68,7 @@ static void BM_MutexQueue(benchmark::State& state) {
     }
     state.SetItemsProcessed(state.iterations() * items);
 }
-BENCHMARK(BM_MutexQueue)->Arg(100'000)->UseRealTime();
+BENCHMARK(BM_MutexQueue)->Arg(kBenchItems)->UseRealTime();
 
 // ── Pure atomic increment (lower bound) ──────────────────────────────────────
 static void BM_AtomicIncrement(benchmark::State& state) {

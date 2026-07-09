@@ -16,8 +16,10 @@
 #include <utility>
 
 template<typename T = void>
+/// Task<T> — eager C++20 coroutine: runs immediately, awaitable, sync_wait()-able.
 class Task {
 public:
+    /// promise_type — stores coroutine result or exception; enables get_return_object.
     struct promise_type {
         std::optional<T>   result;
         std::exception_ptr exception;
@@ -80,8 +82,10 @@ private:
 
 // ── Void specialisation ───────────────────────────────────────────────────────
 template<>
+/// Task<void> — void specialisation: no result storage, just completion + exception.
 class Task<void> {
 public:
+    /// promise_type — void promise: no result, propagates exceptions only.
     struct promise_type {
         std::exception_ptr exception;
         Task get_return_object() noexcept {
