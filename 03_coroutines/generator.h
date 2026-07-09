@@ -122,16 +122,14 @@ private:
     }
 }
 
-/// Range generator [start, stop) with step
-[[nodiscard]] inline Generator<long long> irange(long long start, long long stop, long long step = 1) {
-    if (step == 0) throw std::invalid_argument("irange: step must not be zero");
+// Internal coroutine — called only after step is validated.
+[[nodiscard]] inline Generator<long long> irange_impl(long long start, long long stop, long long step) {
     for (long long i = start; (step > 0) ? (i < stop) : (i > stop); i += step)
         co_yield i;
 }
 
-/// Yields values of a container lazily (useful to compose with views::take etc.)
-template<std::ranges::input_range R>
-[[nodiscard]] Generator<std::ranges::range_value_t<R>> from_range(R r) {
-    for (auto&& v : r)
-        co_yield std::forward<decltype(v)>(v);
-}
+/// Range generator [start, stop) with step.
+/// Throws std::invalid_argument immediately (not lazily) if step == 0.
+/// Note: irange itself is NOT a coroutine so the throw is visible to EXPECT_THROW.
+[[nodiscard]] inline Generator<long long> irange(long long start, long long stop, long long step = 1) {
+    if (step == 0) t

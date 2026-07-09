@@ -9,6 +9,7 @@
 //  • requires expressions (simple + compound + nested)
 //  • Concept subsumption (more-constrained overload wins)
 // ─────────────────────────────────────────────────────────────────────────────
+#include <algorithm>
 #include <concepts>
 #include <functional>
 #include <iostream>
@@ -132,5 +133,4 @@ public:
     }
 
 private:
-    std::vector<T> m_data;
-};
+    std::

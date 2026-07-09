@@ -103,7 +103,9 @@ TEST(SPSCQueue, StressTest_1M_Items) {
         }
     });
 
-    // Both jthreads join on destruction
+    // Join explicitly so assertions see the final sums
+    producer.join();
+    consumer.join();
 
     // Every integer from 0..N-1 must have been transferred exactly once
     EXPECT_EQ(sum_produced.load(), sum_consumed.load());
@@ -224,6 +226,4 @@ TEST(SPSCQueue, MT_Latency_Mean_Under100us) {
 }
 
 int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+    ::testing::In
