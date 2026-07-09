@@ -77,7 +77,7 @@ TEST(TypedStack, MinMax) {
 }
 TEST(TypedStack, TopOnEmptyThrows) {
     TypedStack<double> s;
-    EXPECT_THROW(s.top(), std::runtime_error);
+    EXPECT_THROW({ (void)s.top(); }, std::runtime_error); // NOLINT: suppress [[nodiscard]] warning
 }
 TEST(TypedStack, PopOnEmptyThrows) {
     TypedStack<double> s;
