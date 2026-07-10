@@ -40,7 +40,7 @@ TEST(Generator, IRange_Empty) {
     EXPECT_TRUE(got.empty());
 }
 TEST(Generator, IRange_ZeroStep_Throws) {
-    EXPECT_THROW(irange(0, 5, 0), std::invalid_argument);
+    EXPECT_THROW({ (void)irange(0, 5, 0); }, std::invalid_argument);  // (void) suppresses [[nodiscard]] warning
 }
 TEST(Generator, FromRange) {
     std::vector<int> src{10, 20, 30};
