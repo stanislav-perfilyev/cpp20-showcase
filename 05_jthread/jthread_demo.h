@@ -14,6 +14,7 @@
 #include <chrono>
 #include <functional>
 #include <latch>
+#include <mutex>
 #include <semaphore>
 #include <stop_token>
 #include <thread>

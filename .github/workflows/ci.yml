@@ -21,11 +21,11 @@ jobs:
             cc:  gcc-13
             std: 23
 
-          # Clang 17 on Ubuntu 24.04
+          # Clang 18 on Ubuntu 24.04 (clang-17 + libstdc++-14 incompatibility)
           - os: ubuntu-24.04
-            compiler: clang-17
-            cxx: clang++-17
-            cc:  clang-17
+            compiler: clang-18
+            cxx: clang++-18
+            cc:  clang-18
             std: 23
 
           # MSVC on Windows (latest)
