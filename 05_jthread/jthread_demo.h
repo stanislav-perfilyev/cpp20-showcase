@@ -62,7 +62,7 @@ parallel_sum_with_latch(int n_workers, int iterations) {
     workers.reserve(static_cast<size_t>(n_workers));
 
     for (int i = 0; i < n_workers; ++i) {
-        workers.emplace_back([&, i](std::stop_token) {
+        workers.emplace_back([&](std::stop_token) {
             // Signal "ready" — coordinator waits for this
             ready.count_down();
             // Do actual work

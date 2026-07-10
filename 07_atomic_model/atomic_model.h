@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstdint>
 #include <functional>
+#include <mutex>
 #include <optional>
 #include <thread>
 #include <utility>
